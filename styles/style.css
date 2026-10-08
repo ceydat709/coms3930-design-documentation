@@ -666,3 +666,15 @@ footer a:hover {
     gap: 12px;
   }
 }
+
+/* ===== Links inside blog posts ===== */
+.post a {
+  color: var(--blue-dark);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.post a:hover {
+  color: var(--blue);
+}
