@@ -1,7 +1,7 @@
-<title>Module 2 — Ceyda Topcu</title>
+<title>Module 2 — Interactive Devices</title>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Module 2 documentation, COMS 3930." />
+<meta name="description" content="Module 2 documentation — Interactive Devices, COMS 3930." />
 <link rel="stylesheet" href="../styles/style.css" />
 
 <body data-page="blog">
@@ -27,13 +27,479 @@
       <a href="../blog.html" style="display:inline-block;margin-bottom:18px;color:var(--text-muted);font-size:14px;font-weight:600;">← Documentation</a>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span class="eyebrow">Module 2</span>
-        <a class="repo-tag" href="https://github.com/ceydat709/module-2" target="_blank" rel="noopener">GitHub ↗</a>
+        <a class="repo-tag" href="https://github.com/ceydat709/coms3930-ct3131-module2" target="_blank" rel="noopener">GitHub ↗</a>
       </div>
       <h1 style="font-size: clamp(32px, 5vw, 48px);">Interactive Devices</h1>
       <p class="lede">
-        Build a controller for the ESP32 that controls interactive media. 
+        Build an interactive device with the ESP32 and analog and digital inputs
+        that controls a visual piece on the computer.
       </p>
     </div>
   </header>
+
+  <main class="wrap" style="max-width: 760px; padding-bottom: 80px;">
+    <article class="post">
+      <h2>Ribbit &amp; Throw: Pottery Simulator</h2>
+      <p>
+        Ribbit &amp; Throw is a pottery simulator that imitates the process of making pottery, from shaping
+        the clay on the wheel to firing the piece in the kiln. The experience is broken down into four main
+        parts: placing the clay, shaping the clay, opening a hole at the top of the clay, and firing it.
+        The visuals follow a pixel-art, game-like structure where a frog at the bottom of the screen gives
+        instructions on how to move through the simulator. Similar to an HP bar or progress bar in a game,
+        the panel on the right side shows the speed of the wheel, how high your hands are on the clay, and
+        what step the player is on. The name comes from "throwing," which is what potters call shaping clay
+        on the wheel, paired with the frog that guides you through it.
+      </p>
+      <p>
+        For this project, I specifically used an ESP32 T-Display with soldered headers, a breadboard, a
+        button, a joystick, a potentiometer, female-to-male wires, and jumper wires to connect everything to
+        the power and ground rails. I coded the ESP32 in the Arduino IDE so that it reads all of the inputs
+        and sends them to the computer, and the visuals themselves are drawn in Processing. I also used paper
+        and tape to build the controller that the hardware sits inside.
+      </p>
+
+      <!-- IMAGE: the finished controller / setup (add a photo later, then uncomment)
+      <figure style="margin:24px 0;">
+        <img src="../images/module2-controller.png" alt="The paper controller with the joystick, button, and potentiometer next to the laptop running Ribbit &amp; Throw" style="width:100%;border-radius:12px;background:#fff;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">The controller and the simulator running on the laptop</figcaption>
+      </figure>
+      -->
+
+      <p>
+        To give more background on pottery itself, the real process involves quite a few more steps than what
+        is shown in the simulator. At a high level, it includes choosing your clay, wedging it (kneading the
+        clay against the table), centering it on the wheel, shaping it, letting it stiffen to leather hard, trimming and
+        attaching any extra pieces like handles, keeping the clay loosely covered while it dries, bisque firing,
+        and finally waxing and glazing before a second firing. To match the simplicity of the interactive inputs
+        with the actual process, I tried to take the main parts of it that are the most recognizable and the
+        most satisfying to watch.
+      </p>
+
+      <div style="position:relative;padding-top:56.25%;margin:28px 0;">
+        <iframe src="https://www.youtube.com/embed/SLMVfhkJJEQ" title="Demo video"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          style="position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px;"
+          allowfullscreen></iframe>
+      </div>
+
+      <h2>Design Decisions</h2>
+      <p>
+        While creating the interactive pottery simulator, my decisions can be broken into multiple stages of
+        the project.
+      </p>
+
+      <h3>1. Interactive Media</h3>
+      <p>
+        When I heard the goal of the project, which was to create an interactive device with the provided
+        hardware, the first thing I thought of was different processes and art forms that are very hands-on
+        and visual. This led to pottery. When we first received the hardware in class, the button and the
+        joystick were very satisfying to play around with, so I wanted to carry that same feeling into the
+        visuals that would be changing along with the hardware.
+      </p>
+      <p>
+        While I've never done pottery myself, I've always enjoyed watching pottery artists turn a shapeless
+        blob of clay into intricate, fun shapes. I especially love pottery ASMR on Instagram and TikTok reels.
+        There is something very satisfying about watching the clay rise and curve on the wheel, and I wanted to
+        bring that onto my screen and feel like I'm making the pottery myself through the hardware. Another
+        reference that stuck with me was from the very first class, where we learned about how 3D printing
+        was being used to make pottery. It made me think about how the same craft could be done with a machine
+        or a joystick in my case.
+      </p>
+
+      <figure style="margin:24px 0;">
+        <img src="../images/module2-inspiration.png" alt="A TikTok pottery creator in her studio next to a close-up of hands shaping clay on a wheel" style="width:100%;border-radius:12px;background:#fff;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">One of the pottery creators I watch for ASMR (garbo.zhu on TikTok)</figcaption>
+      </figure>
+
+      <h3>2. How would I make the simulator as close to pottery as possible?</h3>
+      <p>
+        Each input on the controller was matched to something a potter actually does with their hands or the
+        wheel. The potentiometer acts as the foot pedal that controls how fast the wheel spins, the joystick
+        acts as your hands on the clay, and the button moves you on to the next step.
+      </p>
+
+      <h4>Placing the clay</h4>
+      <p>
+        The first step is placing the clay, which happens when you press the button. The default shape of the
+        clay is a rounded lump that is a little wider at the bottom and narrower at the top, to represent what
+        real clay looks like when it is first slapped onto the wheel before any shaping happens. At this point,
+        the frog tells you to turn the knob to start spinning the wheel.
+      </p>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin:24px 0;">
+        <figure style="flex:1 1 300px;margin:0;">
+          <img src="../images/module2-step1.png" alt="The empty pottery wheel at the start of the game" style="width:100%;border-radius:12px;" />
+        </figure>
+        <figure style="flex:1 1 300px;margin:0;">
+          <img src="../images/module2-step2.png" alt="The lump of clay placed on the wheel" style="width:100%;border-radius:12px;" />
+        </figure>
+      </div>
+      <p style="margin-top:-12px;font-size:14px;color:var(--text-muted);text-align:center;">The empty wheel (left) and the clay after it is placed (right)</p>
+
+      <h4>Shaping the clay</h4>
+      <p>
+        How the shaping of the clay would look was a big design decision, since it is the main part of the
+        whole experience and I had to make sure it looked as good as possible. I decided to break the clay up
+        into 34 rings stacked on top of each other, where each ring stores how wide the clay is at that height.
+        This is actually close to how real pottery works, since everything on the wheel is round and the only
+        thing that changes is how wide or narrow the clay is at each height.
+      </p>
+      <p>
+        Moving the joystick up and down moves your hands up and down the clay, and moving it left or right
+        pushes the clay in or pulls it out. Pushing in makes the clay narrower where your hands are, and pulling
+        out makes it wider. Just like a real wheel, the clay only changes while the wheel is spinning, and
+        spinning it faster makes the clay change faster too. Two small pixel hands show where you are touching
+        the clay, so the player always knows which part they are about to shape.
+      </p>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin:24px 0;">
+        <figure style="flex:1 1 300px;margin:0;">
+          <img src="../images/module2-shaping-1.png" alt="Clay pushed in near the top with the hands at 60% height" style="width:100%;border-radius:12px;" />
+        </figure>
+        <figure style="flex:1 1 300px;margin:0;">
+          <img src="../images/module2-shaping-2.png" alt="Clay pulled out at the bottom with the hands at 0% height" style="width:100%;border-radius:12px;" />
+        </figure>
+      </div>
+      <p style="margin-top:-12px;font-size:14px;color:var(--text-muted);text-align:center;">Pushing the clay in near the top (left) and pulling it out at the bottom (right)</p>
+
+      <h4>Making a hole at the top of the clay</h4>
+      <p>
+        Pressing the button again opens the top of the clay. In real pottery, this is when the potter presses
+        their thumbs into the center to start turning the solid lump into a bowl or a vase. In the simulator,
+        the top of the clay turns dark to show that it is now hollow, and the player can still keep shaping the
+        sides. I kept this step simple on purpose, since it is mostly there to make the piece feel like a real
+        hollow piece of clay.
+      </p>
+
+      <figure style="margin:24px 0;">
+        <img src="../images/module2-step3.png" alt="The clay with its top opened, shown as a dark oval" style="width:100%;border-radius:12px;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">The top of the clay opened up</figcaption>
+      </figure>
+
+      <h4>Firing the clay</h4>
+      <p>
+        The last press of the button fires the piece in the kiln. The background glows a warm orange to feel
+        like the heat of the kiln, and the clay changes from its raw brown color to a glaze color that is
+        picked randomly from four options. I also used the press of the joystick here, so clicking down on it
+        tries a new glaze, the same way a potter might test different glazes before choosing one. Pressing the
+        button one more time clears the wheel so you can make another piece.
+      </p>
+
+      <figure style="margin:24px 0;">
+        <img src="../images/module2-step4.png" alt="The finished pot fired in a blue glaze with the kiln-orange background" style="width:100%;border-radius:12px;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">The pot fresh out of the kiln in a blue glaze</figcaption>
+      </figure>
+
+      <h3>3. The look of the game</h3>
+      <p>
+        For the visuals, I wanted it to feel cozy, like a small pixel-art game, instead of a flat drawing. I
+        first tried a more realistic version, but it felt too plain, so I switched to pixel art with natural,
+        earthy colors to match the clay. Every panel has a light edge on the top and left and a darker edge on
+        the bottom and right, with a small shadow behind it, which makes the boxes look raised like buttons in
+        a game. For the border and panels, I used
+        <a href="https://www.pinterest.com/pin/1073967842365902718/" target="_blank" rel="noopener">this pixel-art design from Pinterest</a>
+        as inspiration. I also went through a few mascots before landing on the frog, which I kept simple so it would
+        not take attention away from the wheel.
+      </p>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin:24px 0;align-items:center;">
+        <figure style="flex:1 1 220px;margin:0;">
+          <img src="../images/module2-sketch.png" alt="Initial sketch of the clay studio with a plain wheel, an oval of clay, and a stats box" style="width:100%;border-radius:12px;background:#fff;" />
+        </figure>
+        <figure style="flex:1 1 300px;margin:0;">
+          <img src="../images/module2-step2.png" alt="The final pixel-art version with the clay on the wheel, stats panel, and frog" style="width:100%;border-radius:12px;" />
+        </figure>
+      </div>
+      <p style="margin-top:-12px;font-size:14px;color:var(--text-muted);text-align:center;">From my initial sketch (left) to the final pixel-art design (right)</p>
+
+      <figure style="margin:24px auto;max-width:480px;">
+        <img src="../images/module2-border-inspo.jpg" alt="Pixel-art chat window with a cream border, a large white panel, a frog icon, and a bunny icon" style="width:100%;border-radius:12px;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">
+          The pixel-art window I used as inspiration for the border, from
+          <a href="https://www.pinterest.com/pin/1073967842365902718/" target="_blank" rel="noopener">Pinterest</a>
+        </figcaption>
+      </figure>
+
+      <h2>Technical Implementation</h2>
+      <p>
+        ESP32 reads the hardware and Processing controls the visuals. 
+      </p>
+
+      <h3>Arduino (ESP32)</h3>
+      <p>
+        At the top, I gave each pin a name so I wouldn't have to remember each individual pin number. The joystick has three pins which are left+right, up+down, and the press, and then
+        there is one pin for the potentiometer and one for the button.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>#define JOY_X 39
+#define JOY_Y 32
+#define JOY_SW 33
+#define POT_PIN 36
+#define BUTTON_PIN 2</code></pre>
+      <p>
+        In <code>setup()</code>, the joystick press and the button are set to <code>INPUT_PULLUP</code>. This
+        means the pin reads 1 when nothing is happening and 0 when it is pressed, so I didn't need any extra
+        resistors on the breadboard. <code>Serial.begin(115200)</code> starts sending data to the laptop at a
+        set speed, and this number has to match the one in Processing or nothing will come through.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>void setup() {
+  pinMode(JOY_SW, INPUT_PULLUP);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  Serial.begin(115200);
+}</code></pre>
+      <p>
+        Each time  <code>loop()</code> reads the joystick and the potentiometer with
+        <code>analogRead</code>, which gives a number from 0 to 4095 depending on how far it is turned or pushed,
+        and reads the joystick press and button with <code>digitalRead</code> which only gives 0 or 1. The
+        potentiometer is read twice and only the second reading is kept, since the first one would sometimes
+        pick up leftover signal from the joystick. Then <code>Serial.printf</code> sends all five values as one
+        line separated by comma. At the end, you'll see the <code>delay(30)</code>, which makes it fast enough for the clay to feel natural.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>void loop() {
+  int x = analogRead(JOY_X);
+  int y = analogRead(JOY_Y);
+  int sw = digitalRead(JOY_SW);
+
+  analogRead(POT_PIN);
+  int pot = analogRead(POT_PIN);
+
+  int btn = digitalRead(BUTTON_PIN);
+
+  Serial.printf("%d,%d,%d,%d,%d\n", x, y, sw, pot, btn);
+  delay(30);
+}</code></pre>
+
+      <h3>Processing</h3>
+      <h4>The clay as rings</h4>
+      <p>
+        The most important variable is the clay itself. The clay is stored as a list of
+        34 numbers, where each number is how wide the clay is at that height, starting from the bottom. Every
+        time you shape the clay, the code is really just changing these numbers and the drawing follows them.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>int rings = 34;
+float[] clay = new float[rings];</code></pre>
+
+      <h4>setup() and draw()</h4>
+      <p>
+        <code>setup()</code> makes the window, turns off smoothing with <code>noSmooth()</code>
+        so the pixels stay sharp, picks the font, and connects to the ESP32 using the port it is plugged into.
+        <code>draw()</code> runs every frame and is kind of the main loop of the whole game. First it reads
+        every line the ESP32 has sent so far, splits it at the commas, and passes the five numbers into
+        <code>readSensors()</code>. If only half a line has arrived, it stops and waits for the rest in the next
+        frame. Then it updates the clay and draws everything.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>while (myPort.available() &gt; 0) {
+  val = myPort.readStringUntil('\n');
+  if (val == null) break;
+  val = val.trim();
+  int[] data = int(split(val, ','));
+  if (data.length == 5) readSensors(data[0], data[1], data[2], data[3], data[4]);
+}</code></pre>
+      <p>
+        To get the pixel-art look, everything is drawn very small first, at 240 by 180 pixels. Then
+        <code>get()</code> takes a picture of that small area and <code>image()</code> draws it four times bigger
+        to fill the window. Since smoothing is off, each tiny pixel turns into a sharp 4 by 4 square instead of
+        getting blurry. The text is drawn after this step at full size, so it stays crisp and easy to read.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>PImage small = get(0, 0, W, H);
+image(small, 0, 0, W * SCALE, H * SCALE);
+drawText();</code></pre>
+
+      <h4>readSensors()</h4>
+      <p>
+        This function turns the raw numbers from the ESP32 into things the game understands. The joystick
+        left/right is changed from 0 to 4095 into -1 to 1 with <code>map()</code>, where -1 means pushing in
+        and 1 means pulling out. In case the jostick isn't perfectly in the middle, anything really close to
+        the center is treated as 0 so the clay doesn't slowly change by itself. Up/down slowly moves the hands
+        up and down the clay. The potentiometer becomes the wheel speed from 0 to 1, and anything under 250
+        counts as stopped so the wheel actually stops when the knob is all the way down.
+      </p>
+      <p>
+        For the button, I only wanted it to go to the next step once per press, not every frame while it is
+        held down. So the code remembers what the button was last time and only calls <code>nextStep()</code>
+        at the exact moment it goes from not pressed to pressed. The joystick press works the same way,
+        and only tries a new glaze after the pot is fired.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>if (button == 0 &amp;&amp; lastButton == 1) nextStep();
+lastButton = button;
+
+if (sw == 0 &amp;&amp; lastSw == 1 &amp;&amp; step == 3) pickGlaze();
+lastSw = sw;</code></pre>
+
+      <h4>nextStep() and pickGlaze()</h4>
+      <p>
+        The whole game keeps track of which step you are on with one number, where 0 is the empty wheel, 1 is
+        shaping, 2 is the opened top, and 3 is fired. <code>nextStep()</code> adds one to it and goes back to 0
+        after the last step. When it moves to step 1, it fills in the starting lump of clay, where each ring is
+        a little narrower than the one under it. When it moves to step 3, it calls <code>pickGlaze()</code>,
+        which picks one of four glaze colors at random and keeps picking until it gets one that is different
+        from the last one, so pressing the joystick always shows a new color.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>for (int i = 0; i &lt; rings; i++) {
+  clay[i] = 22 - i * 0.3;
+}</code></pre>
+
+      <h4>updateClay()</h4>
+      <p>
+        This is the function that actually shapes the clay and it only runs while you are shaping and the
+        wheel is spinning. First, it figures out which ring your hands are on. Then, for every ring, it
+        calculates a "closeness" number, which is 1 right at your hands and goes down to 0 four rings away.
+        Each ring changes by how hard you are pushing, times how fast the wheel is spinning, times how close it
+        is to your hands. This is what makes the clay curve around your hands instead of only one ring
+        moving. The clay is also kept between a smallest and biggest width so it can't disappear or grow off
+        the wheel.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>float closeness = max(0, 1 - abs(i - handRing) / 4.0);
+clay[i] = clay[i] + push * 0.35 * speed * closeness;
+clay[i] = constrain(clay[i], 5, 60);</code></pre>
+      <p>
+        After that, each ring is blended a tiny bit with the average of the ring above and below it using
+        <code>lerp()</code>. The 0.02 means it only moves 2% of the way each frame, which keeps the shape smooth
+        without flattening it out too fast. I was able to specifically adjust this number with trial and error.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>float average = (clay[i - 1] + clay[i + 1]) / 2;
+clay[i] = lerp(clay[i], average, 0.02);</code></pre>
+
+      <h4>drawWindow()</h4>
+      <p>
+        This draws the background of the game: the cream window, a small dot pattern, the title bar, the studio
+        wall (which turns orange once the pot is fired), the stats panel, the speed bar, and the frog box. The
+        dot pattern shifts over every other row so it looks like a checkerboard of dots. The frog is drawn from
+        a list of short words, where each letter stands for a color, like X for the outline, G for green, and K
+        for the eyes. The code goes through each letter and draws a 2 by 2 square in that color, so I could
+        design the frog like a pixel drawing right inside the code.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>String[] frog = {
+  ".XXX..XXX.",
+  "XWKWXXWKWX",
+  "XGGGGGGGGX",
+  ...
+};</code></pre>
+
+      <h4>drawClay()</h4>
+      <p>
+        This goes through all 34 rings and draws each one as a thin strip, 2 pixels tall, as wide as that ring's
+        number. Each strip has a dark outline, the main clay color, a light spot on the left, and a shadow on
+        the right, which together make the clay look round. A thin dark streak also slides across the clay as
+        the wheel turns to make it look like it is spinning. The top of the clay is an oval that turns dark
+        once the top is opened. When the pot is fired, the main color switches from brown to the glaze color.
+        Lastly, it draws the two hands on either side of whichever ring you are touching.
+      </p>
+
+      <h4>label() and drawText()</h4>
+      <p>
+        <code>label()</code> lets me place text using the same small 240 by 180 positions as the pixel art, and
+        it multiplies them by 4 so the text lines up with the blown-up drawing. <code>drawText()</code> writes
+        the title, the speed, how high the hands are, and the step you are on. It also writes the frog's
+        message, which changes depending on what you are doing. For example, if the wheel is stopped it tells
+        you to turn the knob, and if you are pushing in it tells you the clay is getting narrower. This way the
+        frog is always reacting to what the player is doing with the controller.
+      </p>
+
+      <h2>Technical Challenges</h2>
+      <p>
+        The first challenge was the shaping itself. Initially, only the one ring at the hands would move, which
+        left a sharp dent and did not look natural at all. Real clay pulls along the clay around it, so I added
+        a "closeness" number that makes the rings closest to the hands change the most and the rings a few
+        steps away change less and less.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>// before
+clay[handRing] = clay[handRing] + push * 0.35 * speed;
+
+// after
+float closeness = max(0, 1 - abs(i - handRing) / 4.0);
+clay[i] = clay[i] + push * 0.35 * speed * closeness;</code></pre>
+      <p>
+        Each ring is also blended a little with the rings above and below it so the shape stays smooth. At
+        first this happened too fast and the clay would straighten itself back out almost right away, so I
+        lowered the number from 0.1 to 0.02 until the shape held for longer but still had smooth curves.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>clay[i] = lerp(clay[i], average, 0.02);  // was 0.1</code></pre>
+
+      <p>
+        I was initially going to make this in 3D in Processing, but instead decided to rely on the stack of
+        rings and pixel art in 2D. A 3D version would have needed a lot more code, and the side view of the clay
+        is what you actually watch in pottery videos anyway.
+      </p>
+
+      <p>
+        Another challenge was the hardware. For a while the potentiometer was always reading 0, and it turned
+        out the legs were in the same row on the breadboard and then connected to the wrong rail. Once that was
+        fixed, the value would jump around whenever I moved the joystick, because the ESP32 reads all of the
+        pins through the same converter. Reading the potentiometer twice and only keeping the second reading
+        fixed this, and treating anything under 250 as 0 made the wheel fully stop when the knob was all the
+        way down.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>analogRead(POT_PIN);
+int pot = analogRead(POT_PIN);</code></pre>
+
+      <h2>Design Recommendations</h2>
+      <p>
+        My first design recommendation is to find inspiration in the feeling the hardware gives you. The button,
+        potentiometer, and joystick can provide both simple and complex interactivity, and finding a mix of both
+        is what matters in my opinion. Matching each input to an action that feels natural, like a knob for the
+        wheel speed and a joystick for your hands, makes the controls much easier to learn without needing many
+        instructions. I would also recommend testing each piece of hardware on its own in the Serial Monitor
+        before connecting it to the visuals, since most of my problems came from wiring and not from the code.
+        Lastly, don't be afraid to keep adjusting the numbers, since small changes like how fast the clay
+        smooths out made the biggest difference in how real it felt.
+      </p>
+      <p>Link to github repository can be found at the top of the page</p>
+
+    </article>
+
+    <h2>AI Support</h2>
+    <p>
+      For this project, I used Claude Code with the Claude Opus 5.5 model to help with parts of the code and
+      the hardware. I mainly got help figuring out how to shape the clay so it would curve naturally around
+      the hands, how to make the pixel-art frog character, and how to debug the connection between the ESP32
+      and Processing.
+    </p>
+
+    <h3>Shaping the clay</h3>
+    <p>
+      Initially, only the one ring at the hands moved, so the clay got sharp dents. I asked how I can control 
+      the shaping better and that's when I learned to use a "closeness" value that fades out over
+      four rings, so nearby rings move too. After that, the shape was smoothing back out too quickly, so Claude helped me implement
+      <code>lerp()</code>, which moves each ring a small part of the way toward the average of the rings
+      above and below it every frame. I then lowered the amount from 0.1 to 0.02 so each ring only moves 2%
+      of the way instead of 10%, which kept the shape for longer while still smoothing out the curves.
+    </p>
+    <ul>
+      <li>"As the wheel is turning, how can I control the shape starting to mold out? ANy specific values?"</li>
+      <li>"Can we make it so the shape stays the same for longer?"</li>
+    </ul>
+
+    <h3>Hardware and serial debugging</h3>
+    <p>
+      This is where I asked the most questions. My potentiometer kept reading 0, and the inputs weren't
+      showing up in Processing at all. I got help checking the wiring step by step, writing a small Arduino
+      test sketch that only printed the potentiometer value to the Serial Monitor, and understanding why the
+      sketch went blank when the baud rates didn't match. I also learned why the potentiometer jumped when I
+      moved the joystick, and that reading it twice fixes it.
+    </p>
+    <ul>
+      <li>"On the ESP32 the input pin is at 38, what do I change?"</li>
+      <li>"Should 3V be connected to + or -?"</li>
+      <li>"The signals are being read in the Arduino Serial Monitor but clicking the button does nothing in Processing."</li>
+      <li>"Does it matter if it's 9600 or 115200?"</li>
+    </ul>
+
+    <h3>Visuals and code structure</h3>
+    <p>
+      Initially, I had all of the text drawn on the small canvas with the rest of the pixel art, so when
+      everything was scaled up by 4, the text came out blocky and hard to read. I asked for help making the
+      text look normal, and learned to draw the pixel art small, blow it up with <code>get()</code> and
+      <code>image()</code>, and then draw the text on top at full size. I also had claude make the frog out
+      of a grid of letters, giving the panels depth with lighter and darker edges, and simplifying the code.
+    </p>
+    <ul>
+      <li>"It's hard to read the text, can you make the text like normal?"</li>
+      <li>"Can you make a simple green frog character inside the bottom left panel"</li>
+      <li>"The surrounding border just feels super flat, can we make it look better?"</li>
+    </ul>
+  </main>
+
+
   <script src="../app.js"></script>
 </body>
