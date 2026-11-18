@@ -33,7 +33,368 @@
       <p class="lede">
         Build a multi-player game that supports communication across multiple ESP32s. 
       </p>
+
+      
     </div>
   </header>
+
+  <main class="wrap" style="max-width: 760px; padding-bottom: 80px;">
+    <article class="post">
+      <h2>Freeze Frame: Collaborative Button Mash Game</h2>
+      <p>
+        Freeze Frame is a two-player button mashing game where both players work together instead of against
+        each other. Both players fill up one shared progress bar and try to reach the target before the timer
+        runs out. The twist is that only one person can press at a time, while the other is frozen for a random
+        2 to 5 seconds before the turns switch. Each player's presses show up in their own color, cyan or
+        orange, so you can see who added what to the bar.
+      </p>
+      <p>
+        For this project, we used two LILYGO T-Display ESP32s and two USB-C cables, 
+        one for each player. Either button on the board counts as a press.
+      </p>
+
+      <!-- TODO: replace VIDEO_ID with the ID from your YouTube link (the part after "watch?v=") -->
+      <div style="position:relative;padding-top:56.25%;margin:28px 0;">
+        <iframe src="https://www.youtube.com/watch?v=yw78CCzBuN0" title="Demo video"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          style="position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px;"
+          allowfullscreen></iframe>
+      </div>
+
+      <h2>Artistic Vision</h2>
+      <p>
+        For our third module, Ho Jin and I wanted to rethink the traditional button-mashing game by turning an
+        individual competition into a collaborative experience. Rather than having two players compete against
+        each other, we designed a game where both players work toward a shared goal, contributing to the same
+        progress bar under a time constraint.
+      </p>
+
+      <figure style="margin:24px 0;">
+        <img src="../images/module3-active-vs-frozen.jpg" alt="Two T-Display boards side by side: the left board shows YOUR TURN with an orange outline, the right board is dimmed and shows FROZEN" style="width:100%;border-radius:12px;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">Visual comparison of active and frozen player displays</figcaption>
+      </figure>
+
+      <p>
+        The central concept was to introduce an element of unpredictability through a random freezing
+        mechanism. At any given moment, only one player can contribute, while the other is temporarily frozen.
+        Every few seconds, the roles switch, requiring players to react quickly and rely on each other's
+        contributions.
+      </p>
+      <p>
+        We also wanted the visual design to reinforce this sense of collaboration. Each player is represented by
+        a distinct color, with their contributions accumulating in one shared progress bar. The display
+        communicates changes in gameplay through visual effects, including a color-changing bar outline, screen
+        dimming, and sparks that appear when a partner contributes.
+      </p>
+      <p>
+        Ultimately, we wanted to create a simple but engaging interaction where success depends on both players
+        working together.
+      </p>
+
+      <h2>My Role</h2>
+      <p>
+        My role consisted primarily of the visual design and communication aspect of the game. Since we wanted
+        to build around the existing code, I decided to modify the existing progress bar display to show a
+        single bar with color-coded contributions from both players. I also adapted the existing ESP-NOW
+        communication to synchronize the shared progress bar and freeze status across both devices.
+      </p>
+      <ul>
+        <li><strong>Shared bar display:</strong> I rewrote the progress bar part of <code>drawScreen()</code>. The starter code drew a separate lane for each player, so I combined them into one bar that fills up toward the team's target, with each player's presses drawn in their own color (cyan for Player 1 and orange for Player 2).</li>
+        <li><strong>Turn blocks:</strong> I changed the bar from two stacked colors into alternating blocks, one for each turn. I added a <code>pressOwner</code> list and an <code>updateHistory()</code> function that remember who made each press in order, so the bar can draw each turn as its own block. The list resets at the start of every round.</li>
+        <li><strong>Turn-colored outline:</strong> I made the outline around the bar change to the color of whoever's turn it is, using <code>playerColors[1 - frozenPlayer]</code>. I also drew it 2 pixels thick so it's easier to notice on the small screen.</li>
+        <li><strong>Dimming:</strong> I used the screen's backlight pin (<code>TFT_BL</code>) with <code>analogWrite</code> to dim the frozen player's whole screen to a low brightness and bring it back to full brightness when their turn starts.</li>
+        <li><strong>Sparks:</strong> I made the frozen player's screen show sparks every time their partner presses. The code checks how much the partner's count went up since the last screen update and draws 6 tiny squares per new press at random spots on the bar, in white or the partner's color, while the screen flashes bright.</li>
+        <li><strong>Smoother updates:</strong> I made Player 0 call <code>sendState()</code> right after every press instead of only on the 250ms heartbeat, so the sparks and the bar update right away on Player 1's board instead of jumping in clumps.</li>
+        <li><strong>Timer fix:</strong> I fixed the timer so it stops when the game ends. I added a <code>finalTimeLeft</code> variable that saves the time left at the moment the game ends, and both boards show that number instead of counting down to 0 after a win.</li>
+      </ul>
+
+      <h2>Design Decisions</h2>
+
+      <h3>1. Shared Progress Bar</h3>
+      <p>
+        At first, we considered giving each player their own progress bar and then having a third bar fill in
+        based on how each player filled theirs, but we found it would be visually simpler to follow along with
+        one progress bar. It also made the game feel more collaborative rather than competitive.
+      </p>
+      <p>
+        In the first version, the bar stacked the two colors, so all of the cyan presses were on the left and
+        all of the orange presses came after. When we played it, I realized you couldn't actually tell how the
+        turns went, so I changed it so every turn adds its own block in that player's color. Now the bar looks
+        like cyan, orange, cyan, orange, and each turn starts filling from where the last one stopped.
+      </p>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin:24px 0;align-items:center;">
+        <figure style="flex:1 1 300px;margin:0;">
+          <img src="../images/module3-sketch.png" alt="Initial sketch of the screen with one shared bar in blue and orange blocks, player counts, team total, time, and a frozen countdown" style="width:100%;border-radius:12px;" />
+        </figure>
+        <figure style="flex:1 1 300px;margin:0;">
+          <img src="../images/module3-turn-blocks.png" alt="The progress bar on the board filled with alternating cyan and orange blocks, one for each turn" style="width:100%;border-radius:12px;" />
+        </figure>
+      </div>
+      <p style="margin-top:-12px;font-size:14px;color:var(--text-muted);text-align:center;">From my initial sketch (left) to the final bar on the board (right)</p>
+
+      <h3>2. Random Freeze</h3>
+      <p>
+        Another important design decision was the random freeze. With the random freeze, the players can't
+        mash at the same time. Only one player is active, and the other has to wait for their turn. At the start
+        of each round, one player is randomly picked to be frozen first, and each freeze lasts a random 2 to 5
+        seconds. Any presses while you're frozen don't count.
+      </p>
+      <p>
+        This added a fun and unexpected twist to the game. While button mashing is usually pretty predictable,
+        when each player gets to go became kind of unpredictable, so you have to keep watching your screen and
+        be ready to start pressing as soon as your turn starts. It also means neither player can win on their
+        own.
+      </p>
+
+      <h3>3. Dimming</h3>
+      <p>
+        After the first round of playing, I felt that given how tiny the screen is, it was hard to tell whose
+        turn it was just from the text. I had already made the outline of the bar change to the color of
+        whoever's turn it is, but it was still pretty small. I wanted something that would cover the whole
+        screen and send a clear signal to the player, so when you're frozen, your whole screen dims, and when
+        it's your turn, it goes back to full brightness.
+      </p>
+
+      <figure style="margin:24px auto;max-width:480px;">
+        <img src="../images/module3-dimmed.png" alt="A dimmed T-Display screen showing the frozen state" style="width:100%;border-radius:12px;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">The frozen player's screen dimmed</figcaption>
+      </figure>
+
+      <h3>4. Sparkling</h3>
+      <p>
+        Another one of my visual designs was the sparkles. I thought adding sparks whenever your partner presses
+        would add another visual cue that it's not your turn, and also give the frozen player something to watch
+        while they wait. Every time your partner presses, little white and colored sparks show up on your
+        progress bar and your screen flashes bright for a second. I liked that you can kind of see your
+        partner's presses coming through on your own board.
+      </p>
+
+      <figure style="margin:24px auto;max-width:480px;">
+        <img src="../images/module3-sparks.png" alt="Small white sparks scattered across the progress bar on a frozen player's screen" style="width:100%;border-radius:12px;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">Sparks on the frozen player's bar while their partner presses</figcaption>
+      </figure>
+
+      <h3>5. Difficulty and Win/Loss Conditions</h3>
+      <p>
+        To make each round feel different, every round randomly picks one of three difficulty settings, where a
+        higher target comes with less time:
+      </p>
+      <ul>
+        <li><strong>Easier:</strong> 65 presses in 30 seconds</li>
+        <li><strong>Medium:</strong> 70 presses in 27 seconds</li>
+        <li><strong>Harder:</strong> 75 presses in 25 seconds</li>
+      </ul>
+      <p>
+        The team wins if the total presses reach the target before the timer hits 0, and loses if time runs out
+        first. When the game ends, the screen shows "TEAM WINS!" or "TIME UP!" and the timer stops. After that,
+        either player can press a button for a rematch.
+      </p>
+
+      <figure style="margin:24px auto;max-width:480px;">
+        <img src="../images/module3-win.png" alt="The full progress bar in alternating cyan and orange blocks with TEAM WINS! PRESS FOR REMATCH" style="width:100%;border-radius:12px;" />
+        <figcaption style="margin-top:8px;font-size:14px;color:var(--text-muted);text-align:center;">A finished round: 65 out of 65 with 11 seconds left</figcaption>
+      </figure>
+
+      <h2>Technical Implementation</h2>
+      <p>
+        Our implementation uses two LILYGO T-Display ESP32 devices that communicate wirelessly through ESP-NOW. Both boards run the same code, and the only difference is
+        <code>PLAYER_ID</code>, which is 0 on one board and 1 on the other.
+      </p>
+      <p>
+        Ho Jin built the game logic, including the shared scoring, the random freeze, the timing and
+        difficulty, the win/loss conditions, and the syncing between the two boards. I built the visuals on top
+        of that, including the turn blocks, the outline, the dimming, and the sparks.
+      </p>
+
+      <h3>How the two boards communicate</h3>
+      <p>
+        The two boards don't do the same job. The board with <code>PLAYER_ID</code> 0 runs the timer, decides who
+        is frozen, keeps the official count for both players, and decides if the team won. The board with
+        <code>PLAYER_ID</code> 1 sends its own presses to Player 0 and then copies whatever game state Player 0
+        sends back. This way, both screens always agree on the time and whose turn it is, since only one board
+        is keeping track of them.
+      </p>
+
+      <h3>The message</h3>
+      <p>
+        Everything the boards share is in one <code>Message</code> struct that gets broadcast over ESP-NOW. Ho
+        Jin added fields to the starter code's message so it could send the whole game state instead of just the
+        press count.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>typedef struct {
+  uint8_t  teamId;
+  uint8_t  playerId;
+  uint16_t presses;
+
+  uint8_t  roundId;
+  uint8_t  turnId;
+  uint8_t  frozenId;
+  ...
+  uint32_t timeLeft;
+  uint32_t freezeLeft;
+  uint32_t sequence;
+} Message;</code></pre>
+      <p>
+        When Player 0 gets a message from Player 1, it only counts the presses if it's actually Player 1's turn.
+        Every message has a <code>roundId</code> and <code>turnId</code>, so if a press shows up late after the
+        turn already switched, the IDs won't match and it gets ignored. Player 0 also numbers every message it
+        sends with <code>sequence</code>, so Player 1 can ignore old messages that arrive out of order.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>if (gameStarted &amp;&amp; !gameOver &amp;&amp; frozenPlayer != 1 &amp;&amp; msg.roundId == roundId &amp;&amp; msg.turnId == turnId) {
+  if (msg.turnPresses &gt; lastAcceptedPresses) {
+    counts[1] += msg.turnPresses - lastAcceptedPresses;
+    lastAcceptedPresses = msg.turnPresses;
+  }
+}</code></pre>
+
+      <h3>updateFreeze()</h3>
+      <p>
+        This runs on Player 0 and switches the turns. When the freeze timer runs out, it flips who is frozen
+        using <code>1 - frozenPlayer</code>, which turns 0 into 1 and 1 into 0. Then it picks a new random freeze
+        between 2 and 5 seconds and sends the new state to Player 1 right away.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>if (remainingTime(freezeEndsAt) == 0) {
+  frozenPlayer = 1 - frozenPlayer;
+  turnId++;
+  freezeEndsAt = millis() + random(2000, 5001);
+  sendState();
+}</code></pre>
+
+      <h3>Drawing the turn blocks</h3>
+      <p>
+        Each board keeps a list called <code>pressOwner</code> that remembers who made each press, in order.
+        <code>updateHistory()</code> adds the new presses to the list whenever the counts go up, and then
+        <code>drawScreen()</code> goes through the list and draws each group of presses from the same player as
+        one block in their color. The outline around the bar is drawn in
+        <code>playerColors[1 - frozenPlayer]</code>, which is the color of whoever's turn it is.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>while (i &lt; historyLen) {
+  int j = i;
+  while (j &lt; historyLen &amp;&amp; pressOwner[j] == pressOwner[i]) j++;   // end of this block
+  int end = constrain((j * BAR_W) / target, 0, BAR_W);
+  tft.fillRect(BAR_X + filled, BAR_TOP, end - filled, BAR_H, playerColors[pressOwner[i]]);
+  filled = end;
+  i = j;
+}</code></pre>
+
+      <h3>Sparks and dimming</h3>
+      <p>
+        For the sparks, the code checks if the partner's count went up since the last time the screen was
+        drawn. If it did and you're frozen, it draws 6 tiny squares per press at random spots on the bar. The
+        brightness is controlled with <code>analogWrite</code> on the <code>TFT_BL</code> pin, from 0 to 255, so
+        it flashes to 255 with the sparks and stays at 40 the rest of the time you're frozen. The sparks
+        disappear on their own since the bar gets redrawn on the next update.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>if (frozen &amp;&amp; newPresses &gt; 0) {
+  for (int s = 0; s &lt; min(newPresses, 4) * 6; s++) {
+    tft.fillRect(BAR_X + random(BAR_W - 3), BAR_TOP + random(BAR_H - 3), 3, 3,
+                 random(2) ? TFT_WHITE : playerColors[partner]);
+  }
+  analogWrite(TFT_BL, 255);               // flash bright with the sparks
+} else {
+  analogWrite(TFT_BL, frozen ? 40 : 255); // dim while frozen, full otherwise
+}</code></pre>
+
+      <h2>Technical Challenges</h2>
+      <p>
+        I struggled to make the bars stack on top of each other. The starter code drew a separate bar for each
+        player, so I had to combine them into one bar where the second player's part starts right where the
+        first player's part ends. I also had to make sure the second part only used the space that was left, or
+        else it would go past the end of the bar.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>int fill0 = constrain((counts[0] * BAR_W) / target, 0, BAR_W);
+int fill1 = constrain((counts[1] * BAR_W) / target, 0, BAR_W - fill0);
+
+tft.fillRect(BAR_X, BAR_TOP, fill0, BAR_H, playerColors[0]);
+tft.fillRect(BAR_X + fill0, BAR_TOP, fill1, BAR_H, playerColors[1]);</code></pre>
+      <p>
+        Even after the stacking worked, it wasn't what I wanted, since it always showed all the cyan first and
+        then all the orange, and you couldn't see the turns. To fix this, the bar couldn't just be drawn from the
+        two totals anymore, so I added the <code>pressOwner</code> list to remember the order of the presses.
+        The tricky part was the moment the turn switches, since Player 1 can get one message where both counts
+        went up. I made it add the frozen player's presses first, since those came from the turn that just
+        ended, so they don't end up in the wrong block.
+      </p>
+      <p>
+        Another problem was the timer. When the team won, the screen said "TEAM WINS!" but the timer kept
+        counting down to 0. This was because the time left was always calculated from the current time, so I
+        fixed it by saving the time left at the moment the game ends and showing that instead.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>// before
+timeLeft = remainingTime(roundStartedAt + timeLimitMs);
+
+// after
+timeLeft = gameOver ? finalTimeLeft : remainingTime(roundStartedAt + timeLimitMs);</code></pre>
+      <p>
+        Lastly, the sparks were choppy on Player 1's board at first. Player 0 was only sending its count every
+        250 milliseconds, so the sparks would show up in clumps. Sending the state right after every press fixed
+        this and also made Player 1's bar move more smoothly.
+      </p>
+<pre style="background:#f6f1ea;padding:16px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.5;"><code>if (PLAYER_ID == 0) {
+  counts[PLAYER_ID]++;
+  checkForWinner();
+  sendState();   // send every press so Player 1 sees sparks right away
+}</code></pre>
+
+    </article>
+
+
+    <h2>Design Recommendations</h2>
+    <p>
+      My first design recommendation is to think about how small the screen is when designing the visuals.
+      The T-Display is tiny, so text alone is easy to miss while you're mashing a button, and cues that cover
+      the whole screen, like dimming it or changing the color of the outline, are much easier to notice. I
+      would also recommend playing the game with your partner early and often, since some problems only showed
+      up when we actually played it, like how the stacked bar didn't show the turns at all. When working with
+      two boards, it also helps to decide early on which board keeps track of the game, so both screens always
+      agree on the time and whose turn it is. Make sure to double check the <code>PLAYER_ID</code> before every
+      upload, and reset the other board after uploading, since a lot of our confusion came from the boards
+      being out of sync and not from the code. Lastly, small visual changes can make a big difference, since
+      just a few lines of code for the sparks and dimming made the game feel much more collaborative.
+    </p>
+
+    <h2>AI Support</h2>
+    <p>
+      For this project, I used Claude with the Claude Opus 5.5 model. I mainly got help understanding the
+      starter code and help exercise how I would implement some of the visual elements.
+    </p>
+
+    <h3>Understanding the code</h3>
+    <p>
+      I first asked Claude to go through the lab instructions and our code, which is where I learned that
+      Player 0 runs the timer and turns while Player 1 follows its game state. It also pointed out that the timer kept counting after a win
+      and helped me fix it. I also asked how to commit and push my changes from the terminal.
+    </p>
+    <ul>
+      <li>"Look through the drawScreen function and help me understand how the progress bar gets filled?"</li>
+      <li>"Who's the host?"</li>
+      <li>"Wait how does the progress bar synhcronize between the two players?"</li>
+    </ul>
+
+    <h3>Finding the timer bug</h3>
+    <p>
+      After we had a working version, we found that when the team won, the screen said "TEAM WINS!" but the timer kept counting down to
+      0. We gave claude our game mechanics to confirm this bug and it explained that this happened because the time left was always calculated as the deadline minus the
+      current time, so nothing told it to stop when the game ended. It also found a second issue, where
+      re-uploading code to Player 0 while Player 1 was still on could make Player 1 look stuck.
+    </p>
+    <ul>
+      <li>"The timer continues after the game is finished, how can we start debugging this?"</li>
+    </ul>
+
+    <h3>The turn-block progress bar</h3>
+    <p>
+      As described in my technical challenge, I had a hard time stacking the two players one after another. So, I asked claude how this mechanism could work. 
+    </p>
+    <ul>
+      <li>"For the stacked visual, I want to keep track each press and who it comes from. How do I do this? "</li>
+    </ul>
+
+    <p>Link to github repository can be found at the top of the page</p>
+
+  </main>
+
   <script src="../app.js"></script>
 </body>
